@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Routine Scheduler</title>
+    <style>
+      * {
+        text-align: center;
+        font-family: Verdana, Geneva, sans-serif;
+        width: auto;
+      }
+
+      h1 {
+        margin-top: 0;
+        text-decoration: underline;
+        font-weight: normal;
+        cursor: pointer;
+      }
+
+      p {
+        margin: 32px
+      }
+
+      @media only screen and (min-width: 960px){
+        p, h1 { font-size: 5vw; }
+
+        .arrow {
+          width: 0;
+          height: 0;
+          border-top: 20px solid transparent;
+          border-bottom: 20px solid transparent;
+          cursor: pointer;
+        }
+
+        .arrow-right { border-left: 20px solid orange; }
+
+        .arrow-left { border-right: 20px solid orange; }
+      }
+
+      @media only screen and (max-device-width: 480px){
+        p, h1 { font-size: 10vw; }
+
+        .arrow {
+          width: 0;
+          height: 0;
+          border-top: 60px solid transparent;
+          border-bottom: 60px solid transparent;
+          cursor: pointer;
+        }
+
+        .arrow-right { border-left: 60px solid orange; }
+
+        .arrow-left { border-right: 60px solid orange; }
+      }
+
+      .top-right {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+
+      .top-left {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="arrow arrow-left top-left" id="arrow-left"></div>
+    <div class="arrow arrow-right top-right" id="arrow-right"></div>
+  </body>
+  <script>
+    var routine = [
+      {
+        "Sunday": ["Rest"],
+        "Monday": ["Yoga (Week 1)"],
+        "Tuesday": ["Excercise 1  (Week 1)", "Excercise 2  (Week 1)"],
+        "Wednesday": ["Rest"],
+        "Thursday": ["Excercise 1 (Week 1)", "Excercise 2 (Week 1)"],
+        "Friday": ["Rest"],
+        "Saturday": ["Rest"]
+      },
+      {
+        "Sunday": ["Rest"],
+        "Monday": ["Yoga (Week 2)"],
+        "Tuesday": ["Excercise 1  (Week 2)", "Excercise 2  (Week 2)"],
+        "Wednesday": ["Rest"],
+        "Thursday": ["Excercise 1 (Week 2)", "Excercise 2 (Week 2)"],
+        "Friday": ["Rest"],
+        "Saturday": ["Rest"]
+      }
+    ];
+
+    document.addEventListener('touchstart', handleTouchStart, false);
+    document.addEventListener('touchmove', handleTouchMove, false);
+
+    var xDown = null;
+    var yDown = null;
+
+    function handleTouchStart(evt) {
+      xDown = evt.touches[0].clientX;
+      yDown = evt.touches[0].clientY;
+    };
+
+    function handleTouchMove(evt) {
+      if (!xDown || !yDown) return;
+      var xUp = evt.touches[0].clientX;
+      var yUp = evt.touches[0].clientY;
+
+      var xDiff = xDown - xUp;
+      var yDiff = yDown - yUp;
+
+      if (Math.abs(xDiff) > Math.abs(yDiff)) {
+        if (xDiff > 0) {
+          showNextRoutine();
+        } else {
+          showPreviousRoutine();
+        }
+      } else {
+        if (yDiff > 0) {
+          /* up swipe */
+        } else {
+          showRoutineForToday();
+        }
+      }
+      /* reset values */
+      xDown = null;
+      yDown = null;
+    };
+
+    var startDate = new Date("03/14/2016");
+
+    function getWeek(date) {
+      var daysInAWeek = 7;
+      var elapsedDays = daysBetween(startDate, date);
+      var elapsedWeeks = Math.ceil(elapsedDays / daysInAWeek);
+      var currentRoutineWeek = (elapsedWeeks % routine.length);
+      return currentRoutineWeek;
+    }
+
+    function daysBetween(startDate, endDate) {
+      var oneDayInMs = 24 * 60 * 60 * 1000;
+      return Math.round(Math.abs((startDate.getTime() - endDate.getTime())/(oneDayInMs)));
+    }
+
+    function getCurrentDayOfWeek(date) {
+      var weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      var dayIndex = date.getDay();
+      return weekDays[dayIndex];
+    }
+
+    function getExercisesFor(date) {
+      var week = getWeek(date);
+      var day = getCurrentDayOfWeek(date);
+      var weekExercises = routine[week];
+      var todayExercises = weekExercises[day];
+      return todayExercises;
+    }
+
+    function showDay() {
+      var day = getCurrentDayOfWeek(date);
+      var title = document.createElement("H1");
+      title.id = 'title';
+      var text = document.createTextNode(day);
+      title.appendChild(text);
+      title.addEventListener("click", showRoutineForToday);
+      document.body.appendChild(title);
+    }
+
+    function remove(items) {
+      for(var i = items.length - 1; i >= 0; i--) {
+        item = items[i];
+        item.parentNode.removeChild(item);
+      }
+    }
+
+    function clearDOM() {
+      var h1Items = document.getElementsByTagName("H1");
+      remove(h1Items);
+      var pItems = document.getElementsByTagName("P");
+      remove(pItems);
+    }
+
+    function showRoutine(date) {
+      clearDOM();
+      showDay(date);
+      var exercises = getExercisesFor(date);
+      for (var i = 0, len = exercises.length; i < len; i++) {
+        var paragraph = document.createElement("P");
+        var text = document.createTextNode(exercises[i]);
+        paragraph.appendChild(text);
+        document.body.appendChild(paragraph);
+      }
+    }
+
+    function showPreviousRoutine() {
+      date.setDate(date.getDate() - 1);
+      showRoutine(date);
+    }
+
+    function showNextRoutine() {
+      date.setDate(date.getDate() + 1);
+      showRoutine(date);
+    }
+
+    function showRoutineForToday() {
+      date = new Date();
+      showRoutine(date);
+    }
+
+    document.getElementById("arrow-left").addEventListener("click", showPreviousRoutine);
+    document.getElementById("arrow-right").addEventListener("click", showNextRoutine);
+
+    showRoutineForToday();
+  </script>
+</html>
